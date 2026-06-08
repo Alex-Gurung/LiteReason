@@ -1,0 +1,158 @@
+# ============================================================================
+# LiteReason: Lightweight Latent Reasoning for Narrative Tasks
+# ============================================================================
+#
+# Validated stack (the exact versions everything here was tested against: the CPU
+# test suite, the hook checks, and the SFT -> RL -> eval smoke):
+#
+#   Python            3.12.3
+#   torch             2.10.0
+#   transformers      5.7.0
+#   accelerate        1.13.0
+#   trl               1.5.1
+#   huggingface_hub   1.18.0
+#   safetensors       0.7.0
+#   numpy             2.2.6
+#   rich              15.0.0
+#   tqdm              4.66.4
+#   spacy             3.8.14   (+ en_core_web_sm 3.8.0)
+#   math-verify       0.9.0
+#   pytest            9.0.3
+#
+#   RL stack (the [rl] extra):
+#   openrlhf          0.10.3
+#   vllm              0.19.1
+#   ray               2.55.0
+#   flash-attn        2.8.3    (cu128 / torch 2.10 / cp312 prebuilt wheel)
+#
+# Additional install notes:
+#   * spaCy model: after installing the `training` extra, download the English
+#     model used for sentence splitting:
+#         python -m spacy download en_core_web_sm
+#   * For RL training, we recommend installing a prebuilt flash-attention wheel
+#     matching your torch/CUDA/Python from
+#     https://github.com/mjun0812/flash-attention-prebuild-wheels first.
+#         uv pip install <matching flash_attn prebuilt wheel>   # e.g. cu128torch2.x-cp312
+#
+# The lower-bound pins below are conservative; the versions above are the ones
+# the project is actively developed and tested against.
+# ============================================================================
+
+[build-system]
+requires = ["setuptools>=77.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "litereason"
+version = "0.1.0"
+description = "Lightweight Latent Reasoning for Narrative Tasks"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    {name = "Alex Gurung"}
+]
+keywords = [
+    "transformers",
+    "llm",
+    "reasoning",
+    "latent-reasoning",
+    "qwen2",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# Core runtime: the minimal set needed to load a LiteReason model and run an
+# HF forward/generate. Heavier training / RL / experiment stacks live in the
+# optional extras below.
+dependencies = [
+    "torch>=2.8.0",
+    # LiteReason targets modern Transformers (4.47+) and keeps compatibility with v5+.
+    "transformers>=4.47.0",
+    "huggingface_hub>=0.20.0",
+    "safetensors>=0.4.0",
+]
+
+[project.entry-points."vllm.general_plugins"]
+litereason = "litereason.vllm_plugin:register"
+
+[project.optional-dependencies]
+# Supervised fine-tuning / projector training of LiteReason models.
+training = [
+    "trl>=0.15.0",
+    "accelerate>=1.0.0",
+    "datasets>=2.14.0",
+    # spaCy is used by projector SFT (sentence splitting for marker injection).
+    # Remember: python -m spacy download en_core_web_sm
+    "spacy>=3.0.0",
+]
+# Reinforcement learning (GRPO) rollouts: OpenRLHF + Ray + the LiteReason vLLM
+# plugin. The plugin targets vLLM's v1 runner and its general-plugins system.
+#
+# OpenRLHF is pinned to the 0.10.x line: its CLI/config is namespaced (e.g.
+# --rollout.batch_size) and the trainer/actor internals shift across minor
+# versions, so the patches in litereason/patches/openrlhf/ track 0.10.x. Bumping
+# the upper bound requires re-running check_openrlhf_hooks.py + the GPU smoke. RL
+# stack last validated end-to-end on: openrlhf 0.10.3, vllm 0.19.1, transformers
+# 5.7, torch 2.10.0 (flash-attn 2.8.3).
+#
+# NOTE: For RL training, we recommend installing a prebuilt flash-attention wheel
+# matching your torch/CUDA/Python from
+# https://github.com/mjun0812/flash-attention-prebuild-wheels first.
+rl = [
+    "openrlhf[vllm,liger,ring]>=0.10.3,<0.11",
+    "ray[default]>=2.9.0",
+]
+# Reproducing the paper experiments / evaluation harnesses.
+experiments = [
+    "math-verify>=0.5.0",
+    "openai>=1.0.0",
+    "rich>=12.0.0",
+    "tqdm>=4.0.0",
+]
+# Development: tests + linting/formatting (ruff covers lint + format).
+dev = [
+    "pytest>=7.0.0",
+    "ruff>=0.1.0",
+]
+# Convenience: install everything.
+all = [
+    "litereason[dev,training,rl,experiments]",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["litereason*"]
+namespaces = true
+
+[tool.setuptools.package-data]
+litereason = [
+    "py.typed",
+    "experiments/flawed_fictions/prompts/*.txt",
+    "experiments/flawed_fictions/configs/*.yaml",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+]
+ignore = [
+    "E501",  # line too long (handled by the formatter)
+    "B008",  # do not perform function calls in argument defaults
+]

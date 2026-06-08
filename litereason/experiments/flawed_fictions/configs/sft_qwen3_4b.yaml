@@ -1,0 +1,51 @@
+# SFT config for Flawed Fictions projector training (Qwen3-4B).
+# Defaults target all-variant prepared data, but launch scripts can override.
+
+# Model
+model_name_or_path: Qwen/Qwen3-4B-Instruct-2507
+model_revision: main
+dtype: bfloat16
+attn_implementation: flash_attention_2
+
+# Dataset
+dataset_dir: ./litereason/experiments/flawed_fictions/working/sft_data/qwen3_4b/all
+dataset_name: twenty_five_percent_masked
+projector_only: true
+require_implicit_markers: true
+max_val_samples: 200
+
+# Training
+bf16: true
+do_eval: true
+eval_strategy: steps
+eval_steps: 8
+gradient_accumulation_steps: 16
+gradient_checkpointing: true
+gradient_checkpointing_kwargs:
+  use_reentrant: false
+learning_rate: 1.0e-04
+log_level: info
+logging_steps: 5
+logging_strategy: steps
+lr_scheduler_type: cosine_with_min_lr
+lr_scheduler_kwargs:
+  min_lr_rate: 0.1
+packing: false
+max_grad_norm: 0.2
+max_length: 4096
+max_steps: -1
+num_train_epochs: 1
+output_dir: ./litereason/experiments/flawed_fictions/outputs/sft_qwen3_4b_all
+per_device_eval_batch_size: 1
+per_device_train_batch_size: 1
+save_strategy: best
+metric_for_best_model: eval_loss
+save_total_limit: 2
+seed: 42
+warmup_ratio: 0.1
+
+# Reporting
+report_to:
+  - wandb
+wandb_project: flawed_fictions_sft
+wandb_run_group: sft_ff_qwen3_4b

@@ -1,0 +1,24 @@
+You are tasked with detecting the presence of continuity errors in a short story. A continuity error occurs when an event or detail in the story contradicts or is incompatible with previously established information about the story's world or characters.
+
+Is there a continuity error in the provided story? Think step by step to answer this question. End your response with \boxed{Yes} if you find a continuity error, and \boxed{No} if you do not find a continuity error. If you respond \boxed{Yes}, you should also provide the lines that introduce the continuity error and the lines from earlier in the story that are contradicted by the error.
+
+Format these lines as follows:
+<contradicted_lines>
+[If applicable, quote the lines from earlier in the story that are contradicted by the error]
+</contradicted_lines>
+
+\boxed{answer}
+
+In addition to your normal reasoning, you may format your reasoning with implicit thought tags of the following format:
+
+ <implicit_thought>number</implicit_thought> 
+ 
+Where number is a number between 1 and 5, and corresponds to the complexity of the thought. When you use this tool, you can skip the sentence that you would have said and move on with your reasoning. This will allow you to think a lot more about the story, while skipping over obvious conclusions/reasoning steps. We recommend doing this in the center of your reasoning, and not at the beginning or end.
+
+Here is the story to analyze:
+
+<story>
+{story}
+</story>
+
+Think carefully and check your work.
